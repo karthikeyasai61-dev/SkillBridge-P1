@@ -19,25 +19,36 @@ const JWT_SECRET = process.env.JWT_SECRET || 'skillbridge_secret';
 // ---- Firebase Admin Setup ----
 let db = null;
 try {
-  // Check local path first, then Render's secret file path (/etc/secrets/)
-  const localPath = './firebase-service-account.json';
-  const renderPath = '/etc/secrets/firebase-service-account.json';
-  const serviceAccountPath = fs.existsSync(localPath) ? localPath : fs.existsSync(renderPath) ? renderPath : null;
-
-  if (serviceAccountPath) {
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+  // Use env vars if available (production/Render), fall back to local JSON file (development)
+  if (process.env.FIREBASE_PRIVATE_KEY) {
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        // Render stores env var with literal \n — replace them with real newlines
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      }),
     });
     db = admin.firestore();
-    console.log('✅ Firebase Admin SDK initialized successfully with Firestore');
+    console.log('✅ Firebase Admin SDK initialized via environment variables');
   } else {
-    console.warn('⚠️ WARNING: firebase-service-account.json not found!');
-    console.warn('⚠️ Please add it locally or as a Render Secret File at /etc/secrets/firebase-service-account.json');
+    // Local development: use the JSON file
+    const localPath = './firebase-service-account.json';
+    const renderPath = '/etc/secrets/firebase-service-account.json';
+    const serviceAccountPath = fs.existsSync(localPath) ? localPath : fs.existsSync(renderPath) ? renderPath : null;
+    if (serviceAccountPath) {
+      const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+      db = admin.firestore();
+      console.log('✅ Firebase Admin SDK initialized via service account file');
+    } else {
+      console.warn('⚠️ WARNING: No Firebase credentials found. Set FIREBASE_PRIVATE_KEY env var or add firebase-service-account.json');
+    }
   }
 } catch (error) {
   console.error('❌ Failed to initialize Firebase:', error.message);
 }
+
 
 // Helper to check if DB is ready
 const checkDb = (req, res, next) => {
