@@ -19,9 +19,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'skillbridge_secret';
 // ---- Firebase Admin Setup ----
 let db = null;
 try {
-  // Check if service account file exists
-  if (fs.existsSync('./firebase-service-account.json')) {
-    const serviceAccount = JSON.parse(fs.readFileSync('./firebase-service-account.json', 'utf8'));
+  // Check local path first, then Render's secret file path (/etc/secrets/)
+  const localPath = './firebase-service-account.json';
+  const renderPath = '/etc/secrets/firebase-service-account.json';
+  const serviceAccountPath = fs.existsSync(localPath) ? localPath : fs.existsSync(renderPath) ? renderPath : null;
+
+  if (serviceAccountPath) {
+    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
@@ -29,8 +33,7 @@ try {
     console.log('✅ Firebase Admin SDK initialized successfully with Firestore');
   } else {
     console.warn('⚠️ WARNING: firebase-service-account.json not found!');
-    console.warn('⚠️ Please download it from Firebase Console -> Project Settings -> Service Accounts -> Generate new private key');
-    console.warn('⚠️ Save it in the "backend" folder as "firebase-service-account.json"');
+    console.warn('⚠️ Please add it locally or as a Render Secret File at /etc/secrets/firebase-service-account.json');
   }
 } catch (error) {
   console.error('❌ Failed to initialize Firebase:', error.message);
