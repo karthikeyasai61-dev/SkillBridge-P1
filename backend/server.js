@@ -65,6 +65,17 @@ function authMiddleware(req, res, next) {
   }
 }
 
+// ===================== HEALTH CHECK =====================
+app.get('/health', async (req, res) => {
+  if (!db) return res.status(500).json({ status: 'error', message: 'Firebase not initialized' });
+  try {
+    await db.collection('users').limit(1).get();
+    res.json({ status: 'ok', firebase: 'connected' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', firebase: err.message });
+  }
+});
+
 // ===================== AUTH ROUTES =====================
 
 // Register
