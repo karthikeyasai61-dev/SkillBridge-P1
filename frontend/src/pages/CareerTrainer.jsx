@@ -19,7 +19,7 @@ import {
   HiOutlineSparkles,
 } from 'react-icons/hi2';
 
-const API = 'http://localhost:5000';
+const API = import.meta.env.VITE_API_URL || '';
 
 const COMPANIES = ['Google', 'Amazon', 'Microsoft', 'Meta', 'Apple', 'Netflix', 'TCS', 'Infosys', 'Wipro', 'Flipkart', 'Zomato', 'Paytm', 'Swiggy', 'Adobe', 'Salesforce', 'IBM', 'Accenture', 'Deloitte'];
 const ROLES = ['Software Engineer', 'Data Scientist', 'Product Manager', 'Frontend Developer', 'Backend Developer', 'Full Stack Developer', 'DevOps Engineer', 'Machine Learning Engineer', 'Data Analyst', 'Cloud Architect', 'Cybersecurity Engineer', 'Mobile Developer', 'UI/UX Designer'];
@@ -74,7 +74,7 @@ export default function CareerTrainer() {
     const load = async () => {
       if (!token) return;
       try {
-        const res = await fetch(`${API}/api/career-trainer/progress`, {
+        const res = await fetch('/api/career-trainer/progress', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const json = await res.json();
@@ -104,7 +104,7 @@ export default function CareerTrainer() {
     setError('');
     setStep('loading');
     try {
-      const res = await fetch(`${API}/api/career-trainer/generate`, {
+      const res = await fetch('/api/career-trainer/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form),
@@ -125,7 +125,7 @@ export default function CareerTrainer() {
     if (!token) return;
     setSaving(true);
     try {
-      await fetch(`${API}/api/career-trainer/progress`, {
+      await fetch('/api/career-trainer/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ progress: newProgress }),
